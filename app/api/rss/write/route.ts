@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
 import { RawPodcast, Podcast } from "@/types/types";
-import { promises as fs } from "fs";
-import path from "path";
+import { addEpisodes, loadEpisodes } from "@/lib/episodes";
 
+/**
+ * POST /api/rss/write
+ * Adds new episodes to the episodes file (prepends them, newest first)
+ */
 export async function POST(request: Request) {
   try {
     const newEpisodes: (RawPodcast | Podcast)[] = await request.json();
-    const filePath = path.join(process.cwd(), "public", "data", "latest_episodes.json");
-    
-    // Load existing episodes
-    let existingEpisodes: (RawPodcast | Podcast)[] = [];
-    try {
-      const fileContents = await fs.readFile(filePath, "utf8");
-      existingEpisodes = JSON.parse(fileContents);
-    } catch (err) {
-      console.warn("No existing episodes file found, creating new one");
+
+    if (!Array.isArray(newEpisodes) || newEpisodes.length === 0) {
+      return NextResponse.json(
+        { error: "No episodes provided" },
+        { status: 400 }
+      );
     }
-    
-    // Prepend new episodes to the existing ones (newest first)
-    const updatedEpisodes = [...newEpisodes, ...existingEpisodes];
-    
-    // Write back to file
-    await fs.writeFile(filePath, JSON.stringify(updatedEpisodes, null, 2), "utf8");
-    
-    return NextResponse.json({ 
+
+    await addEpisodes(newEpisodes);
+    const allEpisodes = await loadEpisodes();
+
+    return NextResponse.json({
       message: `Successfully added ${newEpisodes.length} new episodes`,
-      totalEpisodes: updatedEpisodes.length
+      totalEpisodes: allEpisodes.length,
     });
   } catch (error) {
     console.error("Error writing episodes:", error);

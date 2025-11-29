@@ -100,39 +100,63 @@ export default function EpisodePage() {
       if (!id) return;
 
       try {
-        // Try to load Arabic transcript
-        const arabicRes = await fetch(
-          `/data/transcripts/${id}_arabic_timestamps.json`
-        );
-        if (arabicRes.ok) {
-          const arabicData = await arabicRes.json();
-          setArabicTranscript(arabicData);
-          console.log(
-            `✅ Loaded Arabic transcript: ${arabicData.segments.length} segments`
-          );
-        } else {
-          console.log("❌ Arabic transcript not found (404)");
-        }
-      } catch (err) {
-        console.log("❌ Arabic transcript not available:", err);
-      }
+        // Try to load transcript in new format (_final.json with both Arabic and English)
+        const transcriptRes = await fetch(`/data/transcripts/${id}_final.json`);
+        if (transcriptRes.ok) {
+          const transcriptData = await transcriptRes.json();
 
-      try {
-        // Try to load English transcript
-        const englishRes = await fetch(
-          `/data/transcripts/${id}_english_timestamps.json`
-        );
-        if (englishRes.ok) {
-          const englishData = await englishRes.json();
-          setEnglishTranscript(englishData);
-          console.log(
-            `✅ Loaded English transcript: ${englishData.segments.length} segments`
-          );
+          // Extract Arabic segments
+          const arabicSegments =
+            transcriptData.segments?.map((seg: any) => ({
+              id: seg.id,
+              start: seg.start,
+              end: seg.end,
+              text: seg.text_ar || seg.text_ar_raw || seg.text || "",
+            })) || [];
+
+          // Extract English segments
+          const englishSegments =
+            transcriptData.segments?.map((seg: any) => ({
+              id: seg.id,
+              start: seg.start,
+              end: seg.end,
+              text: seg.text_en || "",
+            })) || [];
+
+          if (arabicSegments.length > 0) {
+            setArabicTranscript({
+              id: transcriptData.file_id || id,
+              title: transcriptData.source_file || "",
+              duration: transcriptData.duration?.toString() || "0",
+              language: transcriptData.language || "ar",
+              transcription_duration:
+                transcriptData.metadata?.processing_time?.total || 0,
+              segments: arabicSegments,
+            });
+            console.log(
+              `✅ Loaded Arabic transcript: ${arabicSegments.length} segments`
+            );
+          }
+
+          if (englishSegments.length > 0) {
+            setEnglishTranscript({
+              id: transcriptData.file_id || id,
+              title: transcriptData.source_file || "",
+              duration: transcriptData.duration?.toString() || "0",
+              language: "en",
+              transcription_duration:
+                transcriptData.metadata?.processing_time?.total || 0,
+              segments: englishSegments,
+            });
+            console.log(
+              `✅ Loaded English transcript: ${englishSegments.length} segments`
+            );
+          }
         } else {
-          console.log("⚠️ English transcript not found (404)");
+          console.log("❌ Transcript not found (404)");
         }
       } catch (err) {
-        console.log("⚠️ English transcript not available:", err);
+        console.log("❌ Transcript not available:", err);
       }
     };
 

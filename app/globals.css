@@ -8,6 +8,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-signature: 'Scheherazade New', 'Lateef', 'Amiri', serif;
+  --font-signature-scheherazade: 'Scheherazade New', serif;
+  --font-signature-lateef: 'Lateef', serif;
+  --font-signature-naskh: 'Noto Naskh Arabic', serif;
+  --font-signature-kufi: 'Noto Kufi Arabic', serif;
+  --font-signature-cairo: 'Cairo', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

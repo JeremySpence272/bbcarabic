@@ -12,36 +12,25 @@
 // if there are no new episodes, return an empty array
 // if there is an error, return an error message
 
-import { NextResponse } from 'next/server';
-import { fetchRSSFeed, parseRSSFeed } from '@/lib/rss';
-import { Podcast } from '@/types/types';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { NextResponse } from "next/server";
+import { fetchRSSFeed, parseRSSFeed } from "@/lib/rss";
+import { loadEpisodes } from "@/lib/episodes";
+import { Podcast } from "@/types/types";
 
+/**
+ * GET /api/rss/parse
+ * Parses the RSS feed and returns only new episodes not already in the file
+ */
 export async function GET() {
   try {
-    // Fetch the RSS feed
     const rssXML = await fetchRSSFeed();
-    
-    // Load existing episodes from JSON file
-    let existingEpisodes: Podcast[] = [];
-    try {
-      const filePath = path.join(process.cwd(), 'public', 'data', 'latest_episodes.json');
-      const fileContents = await fs.readFile(filePath, 'utf8');
-      existingEpisodes = JSON.parse(fileContents);
-    } catch (err) {
-      console.warn('Could not load existing episodes:', err);
-      // Continue with empty array if file doesn't exist
-    }
-    
-    // Parse RSS and get only new episodes
+    const existingEpisodes = (await loadEpisodes()) as Podcast[];
     const newEpisodes = parseRSSFeed(rssXML, existingEpisodes);
-    
     return NextResponse.json(newEpisodes);
   } catch (error) {
-    console.error('Error parsing RSS feed:', error);
+    console.error("Error parsing RSS feed:", error);
     return NextResponse.json(
-      { error: 'Failed to parse RSS feed' },
+      { error: "Failed to parse RSS feed" },
       { status: 500 }
     );
   }
